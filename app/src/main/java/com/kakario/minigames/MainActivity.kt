@@ -1,0 +1,114 @@
+package com.kakario.minigames
+
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.os.Bundle
+import android.view.Gravity
+import android.view.View
+import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import com.kakario.minigames.eink.EinkDevice
+import com.kakario.minigames.solitaire.SolitaireActivity
+import com.kakario.minigames.update.UpdateDialogs
+import com.kakario.minigames.update.Updater
+
+/**
+ * 미니게임 플랫폼 첫 화면 — 게임 아이콘이 격자로 놓이고, 누르면 그 게임이 켜진다.
+ * 새 게임을 만들면 GAMES 목록에 한 줄만 추가하면 아이콘이 생긴다.
+ */
+class MainActivity : Activity() {
+
+    private class Game(val name: String, val icon: (Activity) -> Bitmap, val open: Class<out Activity>)
+
+    private val games = listOf(
+        Game("솔리테어", ::solitaireIcon, SolitaireActivity::class.java),
+    )
+
+    private lateinit var updates: UpdateDialogs
+    private lateinit var root: View
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        updates = UpdateDialogs(this)
+        val pad = Ui.dp(this, 20f)
+        val col = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(pad, pad, pad, pad)
+            setBackgroundColor(Color.WHITE)
+        }
+        col.addView(Ui.label(this, "미니게임", 30f, bold = true))
+        col.addView(View(this).apply { setBackgroundColor(Color.BLACK) },
+            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 2f)).apply {
+                topMargin = Ui.dp(this@MainActivity, 10f); bottomMargin = Ui.dp(this@MainActivity, 20f)
+            })
+
+        val grid = GridLayout(this).apply { columnCount = 3 }
+        val tileW = (resources.displayMetrics.widthPixels - pad * 2) / 3
+        for (g in games) {
+            val tile = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                val p = Ui.dp(this@MainActivity, 8f)
+                setPadding(p, p, p, p)
+                isClickable = true
+                setOnClickListener { startActivity(Intent(this@MainActivity, g.open)) }
+            }
+            val iconSize = (tileW * 0.78f).toInt()
+            tile.addView(ImageView(this).apply { setImageBitmap(g.icon(this@MainActivity)) },
+                LinearLayout.LayoutParams(iconSize, iconSize))
+            tile.addView(Ui.label(this, g.name, 18f, bold = true).apply { gravity = Gravity.CENTER })
+            grid.addView(tile, GridLayout.LayoutParams().apply { width = tileW })
+        }
+        col.addView(grid, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+
+        val foot = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        foot.addView(Ui.label(this, "빌드 #${Updater.get(this).currentBuild}", 16f),
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        foot.addView(Ui.button(this, "업데이트 확인") { Updater.get(this).check(quiet = false) })
+        col.addView(foot)
+
+        root = ScrollView(this).apply { isFillViewport = true; addView(col) }
+        setContentView(root)
+        Updater.get(this).check(quiet = true)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updates.attach()
+        root.post { EinkDevice.applyMode(root); EinkDevice.fullRefresh(root) }
+    }
+
+    override fun onPause() {
+        updates.detach()
+        super.onPause()
+    }
+
+    companion object {
+        /** 솔리테어 아이콘: 카드 두 장을 겹쳐 그린다. */
+        fun solitaireIcon(a: Activity): Bitmap {
+            val size = 360
+            val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val c = Canvas(bmp)
+            c.drawColor(Color.WHITE)
+            val p = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+            fun card(name: String) = a.assets.open("cards/$name.png").use { BitmapFactory.decodeStream(it) }
+            val back = card("SA"); val front = card("HK")
+            val h = size * 0.86f; val sc = h / back.height
+            c.save(); c.rotate(-12f, size / 2f, size / 2f)
+            c.drawBitmap(back, Matrix().apply { setScale(sc, sc); postTranslate(size * 0.10f, size * 0.08f) }, p)
+            c.restore()
+            c.save(); c.rotate(8f, size / 2f, size / 2f)
+            c.drawBitmap(front, Matrix().apply { setScale(sc, sc); postTranslate(size * 0.36f, size * 0.06f) }, p)
+            c.restore()
+            return bmp
+        }
+    }
+}
