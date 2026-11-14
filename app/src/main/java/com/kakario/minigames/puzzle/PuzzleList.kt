@@ -43,8 +43,8 @@ object PuzzleList {
         }
         col.addView(tabs)
 
-        val width = a.resources.displayMetrics.widthPixels - pad * 2
-        val size = width / columns
+        val availW = a.resources.displayMetrics.widthPixels - pad * 2
+        val size = availW / columns
         val grid = GridLayout(a).apply { columnCount = columns }
         for (i in 0 until count) {
             val t = tile(i, size)
