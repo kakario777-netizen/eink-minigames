@@ -69,4 +69,60 @@ object Icons {
         c.drawRoundRect(m, m, s - m, s - m, 30f, 30f, ink(fill = true))
         c.drawText("2048", s / 2, s / 2 + s * 0.08f, text(s * 0.22f, Color.WHITE))
     }
+    fun chess(a: Activity) = make { c, s ->
+        c.drawText("♞\uFE0E", s / 2, s * 0.78f, text(s * 0.75f))
+    }
+
+    fun ladder(a: Activity) = make { c, s ->
+        val xs = floatArrayOf(s * 0.2f, s * 0.4f, s * 0.6f, s * 0.8f)
+        for (x in xs) c.drawLine(x, s * 0.12f, x, s * 0.88f, ink(9f))
+        val rungs = listOf(0 to 0.25f, 2 to 0.32f, 1 to 0.45f, 0 to 0.6f, 2 to 0.66f, 1 to 0.78f)
+        for ((k, y) in rungs) c.drawLine(xs[k], s * y, xs[k + 1], s * y, ink(9f))
+    }
+
+    fun yut(a: Activity) = make { c, s ->
+        for (k in 0 until 4) {
+            val x = s * (0.2f + k * 0.17f); val r = android.graphics.RectF(x, s * 0.15f, x + s * 0.12f, s * 0.85f)
+            if (k % 2 == 0) c.drawRoundRect(r, 40f, 40f, ink(fill = true)) else c.drawRoundRect(r, 40f, 40f, ink(7f))
+            if (k % 2 == 1) for (j in 0 until 3) { val cy = s * (0.32f + j * 0.18f); c.drawLine(x + s * 0.03f, cy - 12, x + s * 0.09f, cy + 12, ink(5f)); c.drawLine(x + s * 0.09f, cy - 12, x + s * 0.03f, cy + 12, ink(5f)) }
+        }
+    }
+
+    private fun cardShape(c: Canvas, x: Float, y: Float, w: Float, label: String, s: Float) {
+        val r = android.graphics.RectF(x, y, x + w, y + w * 1.4f)
+        c.drawRoundRect(r, 20f, 20f, Paint().apply { color = Color.WHITE })
+        c.drawRoundRect(r, 20f, 20f, ink(6f))
+        c.drawText(label, r.centerX(), r.centerY() + s * 0.07f, text(s * 0.2f))
+    }
+
+    fun hula(a: Activity) = make { c, s ->
+        cardShape(c, s * 0.1f, s * 0.14f, s * 0.36f, "7", s)
+        cardShape(c, s * 0.32f, s * 0.2f, s * 0.36f, "7", s)
+        cardShape(c, s * 0.54f, s * 0.26f, s * 0.36f, "7", s)
+    }
+
+    fun onecard(a: Activity) = make { c, s ->
+        cardShape(c, s * 0.18f, s * 0.12f, s * 0.4f, "♠", s)
+        cardShape(c, s * 0.42f, s * 0.22f, s * 0.4f, "1", s)
+    }
+
+    fun memory(a: Activity) = make { c, s ->
+        val w = s * 0.32f
+        for (k in 0 until 4) {
+            val x = s * 0.12f + (k % 2) * s * 0.42f; val y = s * 0.04f + (k / 2) * s * 0.47f
+            val r = android.graphics.RectF(x, y, x + w, y + w * 1.35f)
+            if (k == 0 || k == 3) { c.drawRoundRect(r, 16f, 16f, ink(6f)); c.drawText("★", r.centerX(), r.centerY() + s * 0.06f, text(s * 0.18f)) }
+            else c.drawRoundRect(r, 16f, 16f, ink(fill = true))
+        }
+    }
+
+    fun shisen(a: Activity) = make { c, s ->
+        for ((k, ch) in listOf("中", "中").withIndex()) {
+            val x = s * (0.1f + k * 0.46f); val r = android.graphics.RectF(x, s * 0.2f, x + s * 0.34f, s * 0.68f)
+            c.drawRoundRect(r, 18f, 18f, ink(7f)); c.drawText(ch, r.centerX(), r.centerY() + s * 0.08f, text(s * 0.24f))
+        }
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; strokeWidth = 6f; style = Paint.Style.STROKE; pathEffect = android.graphics.DashPathEffect(floatArrayOf(18f, 12f), 0f) }
+        val path = Path().apply { moveTo(s * 0.27f, s * 0.68f); lineTo(s * 0.27f, s * 0.85f); lineTo(s * 0.73f, s * 0.85f); lineTo(s * 0.73f, s * 0.68f) }
+        c.drawPath(path, p)
+    }
 }
