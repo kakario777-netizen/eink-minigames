@@ -4,9 +4,7 @@ import android.app.Activity
 import android.graphics.Color
 import android.view.Gravity
 import android.view.View
-import android.widget.GridLayout
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import com.kakario.minigames.Ui
 
 /** 퍼즐 게임 공통: 난이도 탭 + 판 목록 화면. */
@@ -21,9 +19,10 @@ object PuzzleList {
         cleared: Int,
         columns: Int,
         onLevel: (String) -> Unit,
-        tile: (index: Int, size: Int) -> View,
+        tile: (index: Int, w: Int, h: Int) -> View,
         onTile: (Int) -> Unit,
         onBack: () -> Unit,
+        focus: Int = 0,
     ): View {
         val pad = Ui.dp(a, 10f)
         val col = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.WHITE); setPadding(pad, pad, pad, pad) }
@@ -43,16 +42,8 @@ object PuzzleList {
         }
         col.addView(tabs)
 
-        val availW = a.resources.displayMetrics.widthPixels - pad * 2
-        val size = availW / columns
-        val grid = GridLayout(a).apply { columnCount = columns }
-        for (i in 0 until count) {
-            val t = tile(i, size)
-            t.isClickable = true
-            t.setOnClickListener { onTile(i) }
-            grid.addView(t, GridLayout.LayoutParams().apply { width = size; height = size })
-        }
-        col.addView(ScrollView(a).apply { addView(grid) }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+        col.addView(com.kakario.minigames.PagedGrid(a, count, columns, 1f, tile, onTile, focus),
+            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         return col
     }
 }

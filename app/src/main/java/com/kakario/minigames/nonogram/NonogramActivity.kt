@@ -74,14 +74,14 @@ class NonogramActivity : Activity() {
 
     // ───── 목록 ─────
     private fun showList() {
-        current = -1; board = null
+        val focusIdx = maxOf(0, current); current = -1; board = null
         val list = all[level]!!
         val cleared = list.indices.count { isCleared(it) }
         setContentView(PuzzleList.build(this, "네모네모 로직", level, list.size, cleared, 4,
             onLevel = { level = it; prefs.edit().putString("lv", it).apply(); showList() },
-            tile = { i, size -> tile(list[i], i, size) },
+            tile = { i, w, h -> tile(list[i], i, minOf(w, h)) },
             onTile = { open(it) },
-            onBack = { finish() }))
+            onBack = { finish() }, focus = focusIdx))
         refresh()
     }
 

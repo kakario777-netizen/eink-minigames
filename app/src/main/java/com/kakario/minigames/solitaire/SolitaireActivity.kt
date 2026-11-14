@@ -13,7 +13,6 @@ import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
-import android.widget.ScrollView
 import android.widget.TextView
 import com.kakario.minigames.Ui
 import com.kakario.minigames.eink.EinkDevice
@@ -211,13 +210,34 @@ class SolitaireActivity : Activity() {
         val cTimed = check("시간 기록 (표준 점수: 10초마다 -2, 빨리 끝내면 보너스)", game.timed)
         val cShow = check("시간 표시", showTime)
         val cCum = check("베가스 점수 누적", vegasCumulative)
-        title("누르기 방식")
-        val gTap = group("눌러서 집고 → 놓을 곳 누르기", "누르면 갈 수 있는 곳으로 바로 이동", checked = if (board.tapAuto) 1 else 0)
-        title("이잉크 전체 새로고침")
+        val page1 = col
+        val page2 = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(pad, pad / 2, pad, 0) }
+        val holder = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        fun title2(t: String) = page2.addView(Ui.label(this, t, 17f, bold = true).apply { setPadding(0, pad / 2, 0, 0) })
+        fun group2(vararg labels: String, checked: Int): RadioGroup {
+            val g = RadioGroup(this)
+            labels.forEachIndexed { i, l -> g.addView(RadioButton(this).apply { text = l; textSize = 17f; id = 1000 + i; setTextColor(Color.BLACK) }) }
+            g.check(1000 + checked); page2.addView(g); return g
+        }
+        title2("누르기 방식")
+        val gTap = group2("눌러서 집고 → 놓을 곳 누르기", "누르면 갈 수 있는 곳으로 바로 이동", checked = if (board.tapAuto) 1 else 0)
+        title2("이잉크 전체 새로고침")
         val steps = intArrayOf(0, 5, 10, 20)
-        val gRef = group("안 함", "5번 움직일 때마다", "10번마다", "20번마다", checked = steps.indexOf(refreshEvery).coerceAtLeast(0))
+        val gRef = group2("안 함", "5번 움직일 때마다", "10번마다", "20번마다", checked = steps.indexOf(refreshEvery).coerceAtLeast(0))
+        // 스크롤 없이 두 페이지로 나눠 보여 준다
+        val switch = Ui.button(this, "다음 페이지 ▶", 17f) {}
+        holder.addView(page1); holder.addView(page2); page2.visibility = View.GONE
+        switch.setOnClickListener {
+            val first = page1.visibility == View.VISIBLE
+            page1.visibility = if (first) View.GONE else View.VISIBLE
+            page2.visibility = if (first) View.VISIBLE else View.GONE
+            switch.text = if (first) "◀ 이전 페이지" else "다음 페이지 ▶"
+        }
+        holder.addView(switch, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+            val m = Ui.dp(this@SolitaireActivity, 12f); setMargins(m, m, m, 0)
+        })
 
-        AlertDialog.Builder(this).setTitle("옵션").setView(ScrollView(this).apply { addView(col) })
+        AlertDialog.Builder(this).setTitle("옵션").setView(holder)
             .setPositiveButton("확인") { _, _ ->
                 val draw3 = gDraw.checkedRadioButtonId == 1001
                 val scoring = Scoring.values()[gScore.checkedRadioButtonId - 1000]

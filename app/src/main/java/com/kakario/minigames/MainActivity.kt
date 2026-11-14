@@ -11,10 +11,8 @@ import android.graphics.Paint
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
-import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import com.kakario.minigames.eink.EinkDevice
 import com.kakario.minigames.nonogram.NonogramActivity
 import com.kakario.minigames.solitaire.SolitaireActivity
@@ -51,7 +49,7 @@ class MainActivity : Activity() {
     private val prefs by lazy { getSharedPreferences("home", MODE_PRIVATE) }
     private lateinit var updates: UpdateDialogs
     private lateinit var root: View
-    private lateinit var grid: GridLayout
+    private lateinit var gridBox: LinearLayout
     private val iconCache = HashMap<String, Bitmap>()
 
     /** 저장된 순서(없는 새 게임은 뒤에 붙임). */
@@ -80,8 +78,8 @@ class MainActivity : Activity() {
                 topMargin = Ui.dp(this@MainActivity, 10f); bottomMargin = Ui.dp(this@MainActivity, 20f)
             })
 
-        grid = GridLayout(this).apply { columnCount = 3 }
-        col.addView(ScrollView(this).apply { addView(grid) }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+        gridBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        col.addView(gridBox, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         buildGrid()
 
         val foot = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -96,51 +94,59 @@ class MainActivity : Activity() {
     }
 
     private fun buildGrid() {
-        grid.removeAllViews()
-        val pad = Ui.dp(this, 20f)
-        val tileW = (resources.displayMetrics.widthPixels - pad * 2) / 3
         val hid = hidden()
-        for (id in order()) {
-            if (id in hid) continue
-            val g = games.first { it.id == id }
-            val tile = LinearLayout(this).apply {
+        val visible = order().filter { it !in hid }.map { id -> games.first { it.id == id } }
+        val focus = (gridBox.getChildAt(0) as? PagedGrid)?.let { it.page * it.perPageCount } ?: 0
+        gridBox.removeAllViews()
+        val pg = PagedGrid(this, visible.size, 3, 1.2f, { i, w, h ->
+            val g = visible[i]
+            LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
-                val p = Ui.dp(this@MainActivity, 8f)
-                setPadding(p, p, p, p)
-                isClickable = true
-                setOnClickListener { startActivity(Intent(this@MainActivity, g.open)) }
+                gravity = Gravity.CENTER
+                val label = Ui.label(this@MainActivity, g.name, 18f, bold = true).apply { gravity = Gravity.CENTER; maxLines = 1 }
+                val iconSize = minOf((w * 0.72f).toInt(), (h * 0.7f).toInt())
+                addView(ImageView(this@MainActivity).apply { setImageBitmap(iconCache.getOrPut(g.id) { g.icon(this@MainActivity) }) },
+                    LinearLayout.LayoutParams(iconSize, iconSize))
+                addView(label)
             }
-            val iconSize = (tileW * 0.72f).toInt()
-            tile.addView(ImageView(this).apply { setImageBitmap(iconCache.getOrPut(g.id) { g.icon(this@MainActivity) }) },
-                LinearLayout.LayoutParams(iconSize, iconSize))
-            tile.addView(Ui.label(this, g.name, 18f, bold = true).apply { gravity = Gravity.CENTER })
-            grid.addView(tile, GridLayout.LayoutParams().apply { width = tileW })
-        }
+        }, { i -> startActivity(Intent(this, visible[i].open)) }, focus = focus)
+        gridBox.addView(pg, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT))
     }
 
     /** 설정: 게임 숨기기(체크 해제) · 순서 바꾸기(▲▼). */
     private fun settings() {
         val ord = order(); val hid = hidden()
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; val p = Ui.dp(this@MainActivity, 12f); setPadding(p, p, p, p) }
+        val per = 8
+        var pg = 0
         fun render() {
             list.removeAllViews()
             list.addView(Ui.label(this, "체크를 끄면 첫 화면에서 숨겨요. ▲▼로 순서를 바꿔요.", 15f).apply { setPadding(0, 0, 0, Ui.dp(this@MainActivity, 8f)) })
-            for ((i, id) in ord.withIndex()) {
+            val pages = (ord.size + per - 1) / per
+            pg = pg.coerceIn(0, pages - 1)
+            for (i in pg * per until minOf(ord.size, pg * per + per)) {
+                val id = ord[i]
                 val g = games.first { it.id == id }
                 val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
                 row.addView(android.widget.CheckBox(this).apply {
                     text = g.name; textSize = 18f; setTextColor(Color.BLACK); isChecked = id !in hid
                     setOnCheckedChangeListener { _, on -> if (on) hid.remove(id) else hid.add(id) }
                 }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-                row.addView(Ui.button(this, "▲", 16f) { if (i > 0) { ord.add(i - 1, ord.removeAt(i)); render() } })
+                row.addView(Ui.button(this, "▲", 16f) { if (i > 0) { ord.add(i - 1, ord.removeAt(i)); if (i - 1 < pg * per) pg--; render() } })
                 row.addView(View(this), LinearLayout.LayoutParams(Ui.dp(this, 6f), 1))
-                row.addView(Ui.button(this, "▼", 16f) { if (i < ord.size - 1) { ord.add(i + 1, ord.removeAt(i)); render() } })
+                row.addView(Ui.button(this, "▼", 16f) { if (i < ord.size - 1) { ord.add(i + 1, ord.removeAt(i)); if (i + 1 >= pg * per + per) pg++; render() } })
                 list.addView(row, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = Ui.dp(this@MainActivity, 4f) })
+            }
+            if (pages > 1) {
+                val nav = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, Ui.dp(this@MainActivity, 8f), 0, 0) }
+                nav.addView(Ui.button(this, "◀ 이전", 17f) { if (pg > 0) { pg--; render() } }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                nav.addView(Ui.label(this, "${pg + 1} / $pages", 17f, bold = true).apply { gravity = Gravity.CENTER }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                nav.addView(Ui.button(this, "다음 ▶", 17f) { if (pg < pages - 1) { pg++; render() } }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                list.addView(nav)
             }
         }
         render()
-        android.app.AlertDialog.Builder(this).setTitle("게임 보이기 · 순서").setView(ScrollView(this).apply { addView(list) })
+        android.app.AlertDialog.Builder(this).setTitle("게임 보이기 · 순서").setView(list)
             .setPositiveButton("저장") { _, _ ->
                 prefs.edit().putString("order", ord.joinToString(",")).putString("hidden", hid.joinToString(",")).apply()
                 buildGrid(); EinkDevice.fullRefresh(root)

@@ -81,14 +81,14 @@ class SudokuActivity : Activity() {
     private fun refresh() { window.decorView.post { EinkDevice.fullRefresh(window.decorView) } }
 
     private fun showList() {
-        current = -1; board = null; timeText = null
+        val focusIdx = maxOf(0, current); current = -1; board = null; timeText = null
         val list = all[level]!!
         val cleared = list.indices.count { prefs.contains("c_" + key(it)) }
         setContentView(PuzzleList.build(this, "스도쿠", level, list.size, cleared, 5,
             onLevel = { level = it; prefs.edit().putString("lv", it).apply(); showList() },
-            tile = { i, _ -> tile(i) },
+            tile = { i, _, _ -> tile(i) },
             onTile = { open(it) },
-            onBack = { finish() }))
+            onBack = { finish() }, focus = focusIdx))
         refresh()
     }
 

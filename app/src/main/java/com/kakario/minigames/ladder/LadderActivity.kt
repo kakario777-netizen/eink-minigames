@@ -13,7 +13,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import com.kakario.minigames.GameScreen
 import com.kakario.minigames.Ui
 import kotlin.random.Random
@@ -87,12 +86,22 @@ class LadderActivity : Activity() {
     }
 
     private fun edit() {
+        // 스크롤 없이 한 화면: 한 줄에 '이름 | 결과' (최대 8줄)
         val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; val p = Ui.dp(this@LadderActivity, 14f); setPadding(p, p, p, p) }
-        val nameEds = names.map { n -> EditText(this).apply { setText(n); textSize = 18f; inputType = InputType.TYPE_CLASS_TEXT; hint = "이름" } }
-        val resEds = results.map { r -> EditText(this).apply { setText(r); textSize = 18f; inputType = InputType.TYPE_CLASS_TEXT; hint = "결과" } }
-        col.addView(Ui.label(this, "이름 (위)", 17f, bold = true)); nameEds.forEach { col.addView(it) }
-        col.addView(Ui.label(this, "결과 (아래, 섞여서 놓여요)", 17f, bold = true)); resEds.forEach { col.addView(it) }
-        AlertDialog.Builder(this).setTitle("이름·결과").setView(ScrollView(this).apply { addView(col) })
+        val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        head.addView(Ui.label(this, "이름 (위)", 16f, bold = true), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        head.addView(Ui.label(this, "결과 (섞여서 놓여요)", 16f, bold = true), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        col.addView(head)
+        val nameEds = ArrayList<EditText>(); val resEds = ArrayList<EditText>()
+        for (i in names.indices) {
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            val ne = EditText(this).apply { setText(names[i]); textSize = 17f; inputType = InputType.TYPE_CLASS_TEXT; hint = "이름"; maxLines = 1 }
+            val re = EditText(this).apply { setText(results[i]); textSize = 17f; inputType = InputType.TYPE_CLASS_TEXT; hint = "결과"; maxLines = 1 }
+            row.addView(ne, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            row.addView(re, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            col.addView(row); nameEds += ne; resEds += re
+        }
+        AlertDialog.Builder(this).setTitle("이름·결과").setView(col)
             .setPositiveButton("저장") { _, _ ->
                 names = nameEds.mapIndexed { i, e -> e.text.toString().ifBlank { "${i + 1}" } }.toMutableList()
                 results = resEds.map { it.text.toString().ifBlank { "꽝" } }.toMutableList()
