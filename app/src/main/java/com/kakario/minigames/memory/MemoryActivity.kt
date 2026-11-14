@@ -86,14 +86,14 @@ class MemoryActivity : Activity() {
             if (deck[up[0]] == deck[up[1]]) {
                 taken[up[0]] = player; taken[up[1]] = player; score[player]++
                 up.clear()
-                if (taken.all { it != 0 }) finish()
+                if (taken.all { it != 0 }) allDone()
             }
             status()
         }
         board.invalidate(); s.tick(16)
     }
 
-    private fun finish() {
+    private fun allDone() {
         s.refresh()
         val msg = if (twoPlayer) {
             if (score[1] == score[2]) "비겼어요! (${score[1]} : ${score[2]})" else "${if (score[1] > score[2]) 1 else 2}번 승리! (${score[1]} : ${score[2]})"
