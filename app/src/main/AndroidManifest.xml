@@ -27,6 +27,15 @@
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"
             android:exported="false" />
 
+        <activity
+            android:name=".nonogram.NonogramActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"
+            android:exported="false" />
+        <activity
+            android:name=".sudoku.SudokuActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"
+            android:exported="false" />
+
         <receiver
             android:name=".update.InstallReceiver"
             android:exported="false" />

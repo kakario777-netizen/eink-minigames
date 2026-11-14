@@ -16,7 +16,9 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import com.kakario.minigames.eink.EinkDevice
+import com.kakario.minigames.nonogram.NonogramActivity
 import com.kakario.minigames.solitaire.SolitaireActivity
+import com.kakario.minigames.sudoku.SudokuActivity
 import com.kakario.minigames.update.UpdateDialogs
 import com.kakario.minigames.update.Updater
 
@@ -30,6 +32,8 @@ class MainActivity : Activity() {
 
     private val games = listOf(
         Game("솔리테어", ::solitaireIcon, SolitaireActivity::class.java),
+        Game("네모네모 로직", ::nonogramIcon, NonogramActivity::class.java),
+        Game("스도쿠", ::sudokuIcon, SudokuActivity::class.java),
     )
 
     private lateinit var updates: UpdateDialogs
@@ -92,6 +96,45 @@ class MainActivity : Activity() {
     }
 
     companion object {
+        /** 네모네모 로직 아이콘: 하트 퍼즐 그림 + 칸 선. */
+        fun nonogramIcon(a: Activity): Bitmap {
+            val size = 360
+            val p = NonogramActivity.load(a)["medium"]!!.let { l -> l.firstOrNull { it.title == "하트" } ?: l.first() }
+            val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val c = Canvas(bmp); c.drawColor(Color.WHITE)
+            val m = size * 0.08f; val cell = (size - 2 * m) / p.n
+            val fill = Paint(); fill.color = Color.BLACK
+            val line = Paint(); line.color = Color.BLACK; line.strokeWidth = 2f
+            for (i in p.sol.indices) if (p.sol[i]) {
+                val x = m + (i % p.n) * cell; val y = m + (i / p.n) * cell
+                c.drawRect(x, y, x + cell, y + cell, fill)
+            }
+            for (k in 0..p.n) {
+                line.strokeWidth = if (k % 5 == 0) 5f else 1.5f
+                c.drawLine(m + k * cell, m, m + k * cell, size - m, line)
+                c.drawLine(m, m + k * cell, size - m, m + k * cell, line)
+            }
+            return bmp
+        }
+
+        /** 스도쿠 아이콘: 3×3 칸에 숫자. */
+        fun sudokuIcon(a: Activity): Bitmap {
+            val size = 360
+            val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val c = Canvas(bmp); c.drawColor(Color.WHITE)
+            val m = size * 0.1f; val cell = (size - 2 * m) / 3
+            val line = Paint(); line.color = Color.BLACK
+            val t = Paint(Paint.ANTI_ALIAS_FLAG); t.color = Color.BLACK; t.textSize = cell * 0.6f; t.textAlign = Paint.Align.CENTER; t.isFakeBoldText = true
+            val nums = intArrayOf(5, 0, 7, 0, 3, 0, 9, 0, 1)
+            for (k in 0..3) {
+                line.strokeWidth = if (k == 0 || k == 3) 9f else 3f
+                c.drawLine(m + k * cell, m, m + k * cell, size - m, line)
+                c.drawLine(m, m + k * cell, size - m, m + k * cell, line)
+            }
+            for (i in 0 until 9) if (nums[i] != 0) c.drawText(nums[i].toString(), m + (i % 3 + 0.5f) * cell, m + (i / 3 + 0.72f) * cell, t)
+            return bmp
+        }
+
         /** 솔리테어 아이콘: 카드 두 장을 겹쳐 그린다. */
         fun solitaireIcon(a: Activity): Bitmap {
             val size = 360
