@@ -35,6 +35,26 @@
             android:name=".sudoku.SudokuActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"
             android:exported="false" />
+        <activity
+            android:name=".mines.MinesActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"
+            android:exported="false" />
+        <activity
+            android:name=".janggi.JanggiActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"
+            android:exported="false" />
+        <activity
+            android:name=".omok.OmokActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"
+            android:exported="false" />
+        <activity
+            android:name=".fifteen.FifteenActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"
+            android:exported="false" />
+        <activity
+            android:name=".g2048.G2048Activity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"
+            android:exported="false" />
 
         <receiver
             android:name=".update.InstallReceiver"

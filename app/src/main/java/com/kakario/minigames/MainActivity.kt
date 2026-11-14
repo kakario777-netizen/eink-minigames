@@ -34,6 +34,11 @@ class MainActivity : Activity() {
         Game("솔리테어", ::solitaireIcon, SolitaireActivity::class.java),
         Game("네모네모 로직", ::nonogramIcon, NonogramActivity::class.java),
         Game("스도쿠", ::sudokuIcon, SudokuActivity::class.java),
+        Game("지뢰찾기", Icons::mines, com.kakario.minigames.mines.MinesActivity::class.java),
+        Game("장기", Icons::janggi, com.kakario.minigames.janggi.JanggiActivity::class.java),
+        Game("오목", Icons::omok, com.kakario.minigames.omok.OmokActivity::class.java),
+        Game("15퍼즐", Icons::fifteen, com.kakario.minigames.fifteen.FifteenActivity::class.java),
+        Game("2048", Icons::g2048, com.kakario.minigames.g2048.G2048Activity::class.java),
     )
 
     private lateinit var updates: UpdateDialogs
